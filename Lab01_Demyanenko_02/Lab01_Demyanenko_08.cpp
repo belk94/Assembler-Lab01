@@ -128,7 +128,7 @@ public:
 
 	bool operator!=(int4x32& a)
 	{
-		return ((_val[0] != a._val[0]) || (_val[1] != a._val[1]));
+        return ((_val[0] != a._val[0]) || (_val[1] != a._val[1]) || (_val[2] != a._val[2]) || (_val[3] != a._val[3]));
 	}
 
 	friend ostream& operator<<(ostream& os, const int4x32_test& a)
@@ -216,12 +216,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		b = b_test.rand();
 
 		start = __rdtsc();
-		c = a * b;
+		c = a - b;
 		end = __rdtsc();
 		asmTime += end - start;
 		
 		start = __rdtsc();
-		c_test = a_test * b_test;
+		c_test = a_test - b_test;
 		end = __rdtsc();
 		cppTime += end - start;
 
