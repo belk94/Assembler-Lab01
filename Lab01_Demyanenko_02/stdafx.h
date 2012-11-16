@@ -18,9 +18,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
-#include <intrin.h>
-
-#pragma intrinsic(__rdtsc)
 
 using std::ostream;
 using std::cout;

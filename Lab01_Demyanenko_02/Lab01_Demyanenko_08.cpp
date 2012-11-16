@@ -140,13 +140,16 @@ public:
 	}
 
 	// Присвоение случайного значения
-	int4x32_test& rand()
+	int4x32_test& rand(int bytesCount = 32)
 	{
+        __int32 allFs = 0xFFFFFFFF;
+        __int32 mask;
 		__int32 r0, r1, r2;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
 		_val[0] = (r2 << 30) | (r1 << 15) | r0;
+        mask = allFs;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
@@ -205,8 +208,6 @@ int _tmain(int argc, _TCHAR* argv[])
     b = int4x32(0x67E59D44);
     c = a * b;
     */
-	long long start, end;
-	long long asmTime = 0, cppTime = 0;
 
 	srand((unsigned) time(NULL));
 
@@ -215,16 +216,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		a = a_test.rand();
 		b = b_test.rand();
 
-		start = __rdtsc();
-		c = a - b;
-		end = __rdtsc();
-		asmTime += end - start;
-		
-		start = __rdtsc();
-		c_test = a_test - b_test;
-		end = __rdtsc();
-		cppTime += end - start;
-
+		c = a * b;
+		c_test = a_test * b_test;
+        
 		if (c_test != c)
 		{
 			cout << endl << endl << "*** ERROR in test " << testNo << " ***" << endl << endl;
@@ -247,8 +241,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	cout << setw(8) << TEST_SIZE;
 
-	cout << endl << "Addition time: " << asmTime << " (asm)" << endl << setw(15) << " vs " << cppTime << " (C++)" << endl;
-    cout << "Time profit: " << (cppTime - asmTime) * 100 / cppTime << "%" << endl << endl;    
 	cout << endl << "Press any key to exit...";
 	_getch();
 	return 0;
