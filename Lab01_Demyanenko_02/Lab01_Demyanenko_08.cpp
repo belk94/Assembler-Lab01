@@ -7,6 +7,8 @@
 extern "C" void add4x32(__int32* sum,  __int32* a, __int32* b);
 extern "C" void sub4x32(__int32* diff, __int32* a, __int32* b);
 extern "C" void mul4x32(__int32* prod, __int32* a, __int32* b);
+extern "C" void div4x32(__int32* quot, __int32* a, __int32* b);
+extern "C" void mod4x32(__int32* rem,  __int32* a, __int32* b);
 
 class int4x32
 {
@@ -41,6 +43,20 @@ public:
         mul4x32(ret._val, _val, b._val);
 		return ret;
     }
+
+    inline int4x32 operator/(int4x32& b)
+    {
+        int4x32 ret;
+        div4x32(ret._val, _val, b._val);
+		return ret;
+    }
+
+    inline int4x32 operator%(int4x32& b)
+    {
+        int4x32 ret;
+        mod4x32(ret._val, _val, b._val);
+		return ret;
+    }
 };
 
 /* ------------------------------------------------------------------------ *\
@@ -51,7 +67,7 @@ class int4x32_test
 private:
 	__int32 _val[4];
 
-	__int32 addWithSaturation(__int32 a, __int32 b)
+	__int32 addWithSaturation(__int32 a, __int32 b) const
 	{
 		signed long long res64 = (signed long long)a + b;
         __int32 res = (__int32)res64;
@@ -66,7 +82,7 @@ private:
         return res;
 	}
 
-	__int32 subWithSaturation(__int32 a, __int32 b)
+	__int32 subWithSaturation(__int32 a, __int32 b) const
 	{
 		signed long long res64 = (long long)a - b;
         __int32 res = (__int32)res64;
@@ -81,7 +97,7 @@ private:
         return res;
 	}
 
-    __int32 mulWithSaturation(__int32 a, __int32 b)
+    __int32 mulWithSaturation(__int32 a, __int32 b) const
     {
         signed long long res64 = (signed long long)a * b;
         __int32 res = (__int32)res64;
@@ -142,30 +158,32 @@ public:
 	// ѕрисвоение случайного значени€
 	int4x32_test& rand(int bytesCount = 32)
 	{
-        __int32 allFs = 0xFFFFFFFF;
-        __int32 mask;
+        __int32 maxValue = 1 << (bytesCount - 1);
 		__int32 r0, r1, r2;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
 		_val[0] = (r2 << 30) | (r1 << 15) | r0;
-        mask = allFs;
+        _val[0] %= maxValue;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
 		_val[1] = (r2 << 30) | (r1 << 15) | r0;
+        _val[1] %= maxValue;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
 		_val[2] = (r2 << 30) | (r1 << 15) | r0;
+        _val[2] %= maxValue;
 		r0 = ::rand();
 		r1 = ::rand();
 		r2 = ::rand();
 		_val[3] = (r2 << 30) | (r1 << 15) | r0;
+        _val[3] %= maxValue;
 		return *this;
 	}
 
-	int4x32_test operator+(int4x32_test& b)
+	int4x32_test operator+(const int4x32_test& b) const
 	{
 		__int32 v0, v1, v2, v3;
 		v0 = addWithSaturation(_val[0], b._val[0]);
@@ -175,7 +193,7 @@ public:
 		return int4x32_test(v0, v1, v2, v3);
 	}
 	
-	int4x32_test operator-(int4x32_test& b)
+	int4x32_test operator-(const int4x32_test& b) const
 	{
 		__int32 v0, v1, v2, v3;
 		v0 = subWithSaturation(_val[0], b._val[0]);
@@ -185,7 +203,7 @@ public:
 		return int4x32_test(v0, v1, v2, v3);
 	}
 
-    int4x32_test operator*(int4x32_test& b)
+    int4x32_test operator*(const int4x32_test& b) const
     {
 		__int32 v0, v1, v2, v3;
 		v0 = mulWithSaturation(_val[0], b._val[0]);
@@ -193,6 +211,31 @@ public:
 		v2 = mulWithSaturation(_val[2], b._val[2]);
 		v3 = mulWithSaturation(_val[3], b._val[3]);
 		return int4x32_test(v0, v1, v2, v3);
+    }
+
+    int4x32_test operator/(const int4x32_test& b) const
+    {
+        __int32 v0, v1, v2, v3;
+        v0 = _val[0] / b._val[0];
+        v1 = _val[1] / b._val[1];
+        v2 = _val[2] / b._val[2];
+        v3 = _val[3] / b._val[3];
+		return int4x32_test(v0, v1, v2, v3);
+    }
+
+    int4x32_test operator%(const int4x32_test& b) const
+    {
+        __int32 v0, v1, v2, v3;
+        v0 = _val[0] % b._val[0];
+        v1 = _val[1] % b._val[1];
+        v2 = _val[2] % b._val[2];
+        v3 = _val[3] % b._val[3];
+		return int4x32_test(v0, v1, v2, v3);
+    }
+
+    bool hasZeros() const
+    {
+        return _val[0] == 0 || _val[1] == 0 || _val[2] == 0 || _val[3] == 0;
     }
 };
 
@@ -213,11 +256,54 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	for (int testNo = 0; testNo < TEST_SIZE; testNo++)
 	{
-		a = a_test.rand();
-		b = b_test.rand();
+        switch (testNo % 5)
+        {
+        case 0:
+            a = a_test.rand();
+            b = b_test.rand();
+            c = a + b;
+            c_test = a_test + b_test;
+            break;
 
-		c = a * b;
-		c_test = a_test * b_test;
+        case 1:
+            a = a_test.rand();
+            b = b_test.rand();
+            c = a - b;
+            c_test = a_test - b_test;
+            break;
+
+        case 2:
+            // ”меньшаем множители, чтобы произведение не всегда переполн€лось
+            a = a_test.rand(17);
+            b = b_test.rand(17);
+            c = a * b;
+            c_test = a_test * b_test;
+            break;
+
+        case 3:
+            a = a_test.rand();
+            do
+            {
+                b = b_test.rand(16);
+            }
+            while (b_test.hasZeros());
+
+            c = a / b;
+            c_test = a_test / b_test;
+            break;
+
+        case 4:
+            a = a_test.rand();
+            do
+            {
+                b = b_test.rand(16);
+            }
+            while (b_test.hasZeros());
+
+            c = a % b;
+            c_test = a_test % b_test;
+            break;
+        }
         
 		if (c_test != c)
 		{
