@@ -1,5 +1,15 @@
 #include "stdafx.h"
 
+#include <conio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <iomanip>
+
+using std::ostream;
+using std::cout;
+using std::endl;
+using std::setw;
+
 /* ------------------------------------------------------------------------ *\
    Декларация класса int4x32 в соответствии с заданием
 \* ------------------------------------------------------------------------ */
@@ -155,10 +165,10 @@ public:
 		return os;
 	}
 
-	// Присвоение случайного значения
-	int4x32_test& rand(int bytesCount = 32)
+	// Присвоить случайное значение младшим bitsCount битам, дополнить знаком
+	int4x32_test& rand(int bitsCount = 32)
 	{
-        __int32 maxValue = 1 << (bytesCount - 1);
+        __int32 maxValue = 1 << (bitsCount - 1);
 		__int32 r0, r1, r2;
 		r0 = ::rand();
 		r1 = ::rand();
@@ -239,22 +249,17 @@ public:
     }
 };
 
-#define TEST_SIZE 1000000
-#define REPORT_PERIOD 10000
+#define TESTS_COUNT 1000000 // Количество повторений теста
+#define REPORT_PERIOD 10000 // Как часто выводить номер теста
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	int4x32_test a_test, b_test, c_test;
 	int4x32 a, b, c;
-    /*
-    a = int4x32(0x6D1B42B2);
-    b = int4x32(0x67E59D44);
-    c = a * b;
-    */
 
 	srand((unsigned) time(NULL));
 
-	for (int testNo = 0; testNo < TEST_SIZE; testNo++)
+	for (int testNo = 0; testNo < TESTS_COUNT; testNo++)
 	{
         switch (testNo % 5)
         {
@@ -325,7 +330,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	cout << setw(8) << TEST_SIZE;
+	cout << setw(8) << TESTS_COUNT;
 
 	cout << endl << "Press any key to exit...";
 	_getch();
