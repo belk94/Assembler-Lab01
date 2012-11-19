@@ -105,22 +105,17 @@ add4x32 PROC ; RCX - *sum
     push r13
     push r14
     push r15
-    push rbx
-    push rbp
 
     mov r14, [rdx]
-    mov r15, [rdx+8]
-    mov rbx, [r8]
-    mov rbp, [r8+8]
-
-    add2x32 r14, rbx, r14 ; Параллельное сложение первых двух операндов
-    add2x32 r15, rbp, r15 ; Параллельное сложение вторых двух операндов
-
+    mov r15, [r8]
+    add2x32 r14, r15, r14 ; Параллельное сложение первых двух операндов
     mov [rcx], r14
-    mov [rcx+8], r15
 
-    pop rbp
-    pop rbx
+    mov r14, [rdx+8]
+    mov r15, [r8+8]
+    add2x32 r14, r15, r14 ; Параллельное сложение вторых двух операндов
+    mov [rcx+8], r14
+
     pop r15
     pop r14
     pop r13
@@ -212,22 +207,17 @@ sub4x32 PROC ; RCX - *diff
     push r13
     push r14
     push r15
-    push rbx
-    push rbp
 
     mov r14, [rdx]
-    mov r15, [rdx+8]
-    mov rbx, [r8]
-    mov rbp, [r8+8]
-
-    sub2x32 r14, rbx, r14 ; Параллельное вычитание первых двух операндов
-    sub2x32 r15, rbp, r15 ; Параллельное вычитание вторых двух операндов
-
+    mov r15, [r8]
+    sub2x32 r14, r15, r14 ; Параллельное вычитание первых двух операндов
     mov [rcx], r14
-    mov [rcx+8], r15
 
-    pop rbp
-    pop rbx
+    mov r14, [rdx+8]
+    mov r15, [r8+8]
+    sub2x32 r14, r15, r14 ; Параллельное вычитание вторых двух операндов
+    mov [rcx+8], r14
+
     pop r15
     pop r14
     pop r13
@@ -267,49 +257,46 @@ ENDM
 mul4x32 PROC ; RCX - *prod
              ; RDX - *a
              ; R8  - *b
-    push rbx
     push r12
-    push r13
-    push r14
-
-    mov rbx, [rdx]
-    mov r9, [rdx+8]
-    mov r10, [r8]
-    mov r11, [r8+8]
     
+    mov r9, [rdx]
+    mov r10, [r8]
+    mov r11, rdx ; rdx неизбежно изменится при умножении
+
     ; Записать произведение первых двух операндов в младшую половину r12
-    mov eax, ebx
+    mov eax, r9d
     mul1x32 r10d
     mov r12d, eax
 
     ; Записать произведение вторых двух операндов в старшую половину r12
-    shr rbx, 32
+    shr r9, 32
     shr r10, 32
-    mov eax, ebx
+    mov eax, r9d
     mul1x32 r10d
     shl rax, 32
     or  r12, rax
+
+    mov [rcx], r12
+
+    mov r9, [r11+8]
+    mov r10, [r8+8]
     
     ; Записать произведение третьих двух операндов в младшую половину r13
     mov eax, r9d
-    mul1x32 r11d
-    mov r13d, eax
+    mul1x32 r10d
+    mov r12d, eax
 
     ; Записать произведение четвёртых двух операндов в старшую половину r13
     shr r9, 32
-    shr r11, 32
+    shr r10, 32
     mov eax, r9d
-    mul1x32 r11d
+    mul1x32 r10d
     shl rax, 32
-    or  r13, rax
+    or  r12, rax
 
-    mov [rcx], r12
-    mov [rcx+8], r13
+    mov [rcx+8], r12
 
-    pop r14
-    pop r13
     pop r12
-    pop rbx
 
     ret
 mul4x32 ENDP
@@ -322,51 +309,50 @@ mul4x32 ENDP
 div4x32 PROC ; RCX - *quot
              ; RDX - *a
              ; R8  - *b
-    push rbx
     push r12
-    push r13
 
-    mov rbx, [rdx]
-    mov r9, [rdx+8]
+    mov r9, [rdx]
     mov r10, [r8]
-    mov r11, [r8+8]
+    mov r11, rdx ; rdx неизбежно изменится при подготовке к делению
         
     ; Записать частное первых двух операндов в младшую половину r12
-    mov eax, ebx
+    mov eax, r9d
     cdq
     idiv r10d
     mov r12d, eax
 
     ; Записать частное вторых двух операндов в старшую половину r12
-    shr rbx, 32
+    shr r9, 32
     shr r10, 32
-    mov eax, ebx
+    mov eax, r9d
     cdq
     idiv r10d
     shl rax, 32
     or  r12, rax
     
+    mov [rcx], r12
+
+    mov r9, [r11+8]
+    mov r10, [r8+8]
+
     ; Записать частное третьих двух операндов в младшую половину r13
     mov eax, r9d
     cdq
-    idiv r11d
-    mov r13d, eax
+    idiv r10d
+    mov r12d, eax
 
     ; Записать частное четвёртых двух операндов в старшую половину r13
     shr r9, 32
-    shr r11, 32
+    shr r10, 32
     mov eax, r9d
     cdq
-    idiv r11d
+    idiv r10d
     shl rax, 32
-    or  r13, rax
+    or  r12, rax
 
-    mov [rcx], r12
-    mov [rcx+8], r13
+    mov [rcx+8], r12
 
-    pop r13
     pop r12
-    pop rbx
 
     ret
 div4x32 ENDP
@@ -379,51 +365,50 @@ div4x32 ENDP
 mod4x32 PROC ; RCX - *rem
              ; RDX - *a
              ; R8  - *b
-    push rbx
     push r12
-    push r13
 
-    mov rbx, [rdx]
-    mov r9, [rdx+8]
+    mov r9, [rdx]
     mov r10, [r8]
-    mov r11, [r8+8]
+    mov r11, rdx ; rdx неизбежно изменится при подготовке к делению
         
-    ; Записать частное первых двух операндов в младшую половину r12
-    mov eax, ebx
+    ; Записать остаток от деления первых двух операндов в младшую половину r12
+    mov eax, r9d
     cdq
     idiv r10d
     mov r12d, edx
 
-    ; Записать частное вторых двух операндов в старшую половину r12
-    shr rbx, 32
+    ; Записать остаток от деления вторых двух операндов в старшую половину r12
+    shr r9, 32
     shr r10, 32
-    mov eax, ebx
+    mov eax, r9d
     cdq
     idiv r10d
     shl rdx, 32
     or  r12, rdx
     
-    ; Записать частное третьих двух операндов в младшую половину r13
-    mov eax, r9d
-    cdq
-    idiv r11d
-    mov r13d, edx
-
-    ; Записать частное четвёртых двух операндов в старшую половину r13
-    shr r9, 32
-    shr r11, 32
-    mov eax, r9d
-    cdq
-    idiv r11d
-    shl rdx, 32
-    or  r13, rdx
-
     mov [rcx], r12
-    mov [rcx+8], r13
 
-    pop r13
+    mov r9, [r11+8]
+    mov r10, [r8+8]
+
+    ; Записать остаток от деления третьих двух операндов в младшую половину r13
+    mov eax, r9d
+    cdq
+    idiv r10d
+    mov r12d, edx
+
+    ; Записать остаток от деления четвёртых двух операндов в старшую половину r13
+    shr r9, 32
+    shr r10, 32
+    mov eax, r9d
+    cdq
+    idiv r10d
+    shl rdx, 32
+    or  r12, rdx
+
+    mov [rcx+8], r12
+
     pop r12
-    pop rbx
 
     ret
 mod4x32 ENDP
