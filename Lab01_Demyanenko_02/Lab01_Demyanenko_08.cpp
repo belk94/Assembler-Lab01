@@ -77,49 +77,17 @@ class int4x32_test
 private:
 	__int32 _val[4];
 
-	__int32 addWithSaturation(__int32 a, __int32 b) const
-	{
-		signed long long res64 = (signed long long)a + b;
-        __int32 res = (__int32)res64;
-        if (res64 > 0x000000007FFFFFFF)
-        {
-            res = 0x7FFFFFFF;
-        }
-        if (res64 < (signed long long)0xFFFFFFFF80000000)
-        {
-            res = 0x80000000;
-        }
-        return res;
-	}
-
-	__int32 subWithSaturation(__int32 a, __int32 b) const
-	{
-		signed long long res64 = (long long)a - b;
-        __int32 res = (__int32)res64;
-        if (res64 > 0x000000007FFFFFFF)
-        {
-            res = 0x7FFFFFFF;
-        }
-        if (res64 < (signed long long)0xFFFFFFFF80000000)
-        {
-            res = 0x80000000;
-        }
-        return res;
-	}
-
-    __int32 mulWithSaturation(__int32 a, __int32 b) const
+    _int32 saturate(signed long long a) const
     {
-        signed long long res64 = (signed long long)a * b;
-        __int32 res = (__int32)res64;
-        if (res64 > 0x000000007FFFFFFF)
+        if (a > 0x000000007FFFFFFF) // Проверка на переполнение вверх
         {
-            res = 0x7FFFFFFF;
+            return 0x7FFFFFFF;
         }
-        if (res64 < (signed long long)0xFFFFFFFF80000000)
+        if (a < (signed long long)0xFFFFFFFF80000000) // Проверка на переполнение вниз
         {
-            res = 0x80000000;
+            return 0x80000000;
         }
-        return res;
+        return (__int32)a;
     }
 
 public:
@@ -196,36 +164,40 @@ public:
 	int4x32_test operator+(const int4x32_test& b) const
 	{
 		__int32 v0, v1, v2, v3;
-		v0 = addWithSaturation(_val[0], b._val[0]);
-		v1 = addWithSaturation(_val[1], b._val[1]);
-		v2 = addWithSaturation(_val[2], b._val[2]);
-		v3 = addWithSaturation(_val[3], b._val[3]);
+        // Сложить числа как 64битные, привести к 32битным с насыщением
+		v0 = saturate((signed long long)_val[0] + b._val[0]);
+		v1 = saturate((signed long long)_val[1] + b._val[1]);
+		v2 = saturate((signed long long)_val[2] + b._val[2]);
+		v3 = saturate((signed long long)_val[3] + b._val[3]);
 		return int4x32_test(v0, v1, v2, v3);
 	}
 	
 	int4x32_test operator-(const int4x32_test& b) const
 	{
 		__int32 v0, v1, v2, v3;
-		v0 = subWithSaturation(_val[0], b._val[0]);
-		v1 = subWithSaturation(_val[1], b._val[1]);
-		v2 = subWithSaturation(_val[2], b._val[2]);
-		v3 = subWithSaturation(_val[3], b._val[3]);
+        // Вычесть числа как 64битные, привести к 32битным с насыщением
+		v0 = saturate((signed long long)_val[0] - b._val[0]);
+		v1 = saturate((signed long long)_val[1] - b._val[1]);
+		v2 = saturate((signed long long)_val[2] - b._val[2]);
+		v3 = saturate((signed long long)_val[3] - b._val[3]);
 		return int4x32_test(v0, v1, v2, v3);
 	}
 
     int4x32_test operator*(const int4x32_test& b) const
     {
 		__int32 v0, v1, v2, v3;
-		v0 = mulWithSaturation(_val[0], b._val[0]);
-		v1 = mulWithSaturation(_val[1], b._val[1]);
-		v2 = mulWithSaturation(_val[2], b._val[2]);
-		v3 = mulWithSaturation(_val[3], b._val[3]);
+        // Перемножить числа как 64битные, привести к 32битным с насыщением
+		v0 = saturate((signed long long)_val[0] * b._val[0]);
+		v1 = saturate((signed long long)_val[1] * b._val[1]);
+		v2 = saturate((signed long long)_val[2] * b._val[2]);
+		v3 = saturate((signed long long)_val[3] * b._val[3]);
 		return int4x32_test(v0, v1, v2, v3);
     }
 
     int4x32_test operator/(const int4x32_test& b) const
     {
         __int32 v0, v1, v2, v3;
+        // При делении переполнения быть не может, насыщение не нужно
         v0 = _val[0] / b._val[0];
         v1 = _val[1] / b._val[1];
         v2 = _val[2] / b._val[2];
@@ -236,6 +208,7 @@ public:
     int4x32_test operator%(const int4x32_test& b) const
     {
         __int32 v0, v1, v2, v3;
+        // При взятии по модулю переполнения быть не может, насыщение не нужно
         v0 = _val[0] % b._val[0];
         v1 = _val[1] % b._val[1];
         v2 = _val[2] % b._val[2];
@@ -243,6 +216,7 @@ public:
 		return int4x32_test(v0, v1, v2, v3);
     }
 
+    // Есть ли среди значений нули
     bool hasZeros() const
     {
         return _val[0] == 0 || _val[1] == 0 || _val[2] == 0 || _val[3] == 0;
@@ -291,7 +265,7 @@ int _tmain(int argc, _TCHAR* argv[])
             {
                 b = b_test.rand(16);
             }
-            while (b_test.hasZeros());
+            while (b_test.hasZeros()); // Исключение деления на ноль
 
             c = a / b;
             c_test = a_test / b_test;
@@ -303,7 +277,7 @@ int _tmain(int argc, _TCHAR* argv[])
             {
                 b = b_test.rand(16);
             }
-            while (b_test.hasZeros());
+            while (b_test.hasZeros()); // Исключение взятия по модулю ноль
 
             c = a % b;
             c_test = a_test % b_test;

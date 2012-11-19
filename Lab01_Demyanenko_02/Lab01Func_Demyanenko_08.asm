@@ -107,22 +107,18 @@ add4x32 PROC ; RCX - *sum
     push r15
     push rbx
     push rbp
-    push rdi
-    push rsi
 
     mov r14, [rdx]
     mov r15, [rdx+8]
     mov rbx, [r8]
     mov rbp, [r8+8]
 
-    add2x32 r14, rbx, rdi ; Параллельное сложение первых двух операндов
-    add2x32 r15, rbp, rsi ; Параллельное сложение вторых двух операндов
+    add2x32 r14, rbx, r14 ; Параллельное сложение первых двух операндов
+    add2x32 r15, rbp, r15 ; Параллельное сложение вторых двух операндов
 
-    mov [rcx], rdi
-    mov [rcx+8], rsi
+    mov [rcx], r14
+    mov [rcx+8], r15
 
-    pop rsi
-    pop rdi
     pop rbp
     pop rbx
     pop r15
@@ -218,22 +214,18 @@ sub4x32 PROC ; RCX - *diff
     push r15
     push rbx
     push rbp
-    push rdi
-    push rsi
 
     mov r14, [rdx]
     mov r15, [rdx+8]
     mov rbx, [r8]
     mov rbp, [r8+8]
 
-    sub2x32 r14, rbx, rdi ; Параллельное вычитание первых двух операндов
-    sub2x32 r15, rbp, rsi ; Параллельное вычитание вторых двух операндов
+    sub2x32 r14, rbx, r14 ; Параллельное вычитание первых двух операндов
+    sub2x32 r15, rbp, r15 ; Параллельное вычитание вторых двух операндов
 
-    mov [rcx], rdi
-    mov [rcx+8], rsi
+    mov [rcx], r14
+    mov [rcx+8], r15
 
-    pop rsi
-    pop rdi
     pop rbp
     pop rbx
     pop r15
@@ -333,7 +325,6 @@ div4x32 PROC ; RCX - *quot
     push rbx
     push r12
     push r13
-    push r14
 
     mov rbx, [rdx]
     mov r9, [rdx+8]
@@ -373,7 +364,6 @@ div4x32 PROC ; RCX - *quot
     mov [rcx], r12
     mov [rcx+8], r13
 
-    pop r14
     pop r13
     pop r12
     pop rbx
@@ -392,7 +382,6 @@ mod4x32 PROC ; RCX - *rem
     push rbx
     push r12
     push r13
-    push r14
 
     mov rbx, [rdx]
     mov r9, [rdx+8]
@@ -432,7 +421,6 @@ mod4x32 PROC ; RCX - *rem
     mov [rcx], r12
     mov [rcx+8], r13
 
-    pop r14
     pop r13
     pop r12
     pop rbx
